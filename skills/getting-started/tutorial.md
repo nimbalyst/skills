@@ -1102,7 +1102,7 @@ After the plan is on disk, remind the user how to open it. Before the worktree e
 3. **Iterate with the agent if you want.** Paste something like:
 
    > **Paste this:**
-   >
+>
    > In @plans/comment-editing.md, expand the "Tests we need" section into a concrete file-by-file checklist.
 
 A sharper plan now means less churn inside the worktree later.
@@ -1418,7 +1418,7 @@ Have the user paste this to *generate* the PR body (without pushing):
 Walk through what the agent comes back with:
 
 > Read the body the agent drafted. Three things to check on a real PR (and to push back on now if they're missing):
->
+   >
 > 1. Does the summary lead with the user-facing change, or is it just a list of file names? If file names: "rewrite to lead with what changes for users, then the technical approach in two bullets."
 > 2. Are the references to the plan and diagram in a clickable form a reviewer can find?
 > 3. Is there a "Test plan" or "How to verify" section?
@@ -1692,14 +1692,15 @@ Shared:
 
 These are the steps to send a new user when sharing the tutorial. **Not displayed to the user inside the tutorial**, just here so you can find them.
 
-1. In Nimbalyst, create any workspace (`Cmd+P` → **Create New Workspace** → name it anything, e.g. `Tutorial-Setup`).
+1. In Nimbalyst, create any workspace (`Cmd+P` → **Create New Workspace** → name it anything, e.g. `Tutorial-Launcher`). This is just where the bootstrap chat lives. The tutorial itself will move into a dedicated workspace it creates for you.
 2. In that workspace's chat, paste this single prompt:
 
    > Download `https://raw.githubusercontent.com/nimbalyst/skills/main/skills/getting-started/tutorial.md` to `~/.claude/commands/tutorial.md` (create the directory if it doesn't exist). Then read the file and run it as the Nimbalyst tutorial. Follow it exactly, wait for me at every exercise.
 
-3. The tutorial starts. `/tutorial` is now installed globally too, so you can rerun it from any workspace.
+3. The tutorial starts. It will clone the HackerNews demo, walk you through opening that folder as a new Nimbalyst workspace, and run the actual tutorial there. The launcher workspace can be deleted afterward.
 
-That's it. One workspace, one paste, no browser download, no Save As dance.
+That's it. One paste, no browser download, no Save As dance.
+
+**Note on `/tutorial` as a slash command:** the bootstrap prompt installs it globally so future runs are one keystroke from any workspace. But running `/tutorial` always means "start over in a fresh HackerNews demo workspace." If you want to revisit the tutorial later, expect a new clone of the demo, not a continuation in a real project.
 
 **Browsable page (for someone who wants to read it before downloading):** `https://github.com/nimbalyst/skills/blob/main/skills/getting-started/tutorial.md`
-
