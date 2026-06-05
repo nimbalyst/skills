@@ -175,21 +175,22 @@ If they are not in Nimbalyst, say:
 
 (OS detection happens in Step 6 alongside the toolchain check.)
 
-## 1b. Place tutorial.md in the new workspace after the demo clone
+## 1b. Keep the launcher workspace clean; place tutorial.md only in the demo workspace
 
-The tutorial is a regular markdown file the user owns, not a hidden slash command. After step 8 clones the HackerNews demo and tells the user to open it as a new workspace, also write `tutorial.md` into that new workspace's root so the user can re-run it later with `Run @tutorial.md`.
+The tutorial is a regular markdown file the user owns, not a hidden slash command. **Do not write any files into the launcher workspace.** The user pasted the bootstrap prompt there only to kick things off, and it should stay empty so they can delete it cleanly. You already have the tutorial content in context from fetching the URL, so run it from memory.
 
-**When the new HackerNews-demo workspace is created (during step 8):**
+The canonical home for `tutorial.md` is the **HackerNews-demo workspace**, which does not exist yet at launch. It gets created in step 8 (the clone). The moment that workspace exists, write `tutorial.md` into its root.
+
+**During step 8, right after the demo clone succeeds:**
 
 ```bash
-# Copy the tutorial file from wherever it currently lives to the new workspace root.
-# The source is whatever path the bootstrap prompt downloaded to. By convention
-# that's <launcher-workspace>/tutorial.md but could be ~/Downloads/tutorial.md
-# or anywhere else the user pointed you at.
-cp <source-tutorial-path> ~/Nimbalyst-HN-Tutorial/tutorial.md
+# Write the tutorial into the new workspace root so the user owns it and can re-run.
+# Re-fetch from source; nothing was written to the launcher to copy from.
+curl -fsSL https://raw.githubusercontent.com/nimbalyst/skills/main/skills/getting-started/tutorial.md \
+  -o ~/Nimbalyst-HN-Tutorial/tutorial.md
 ```
 
-Tell the user in chat:
+Tell the user in chat (as part of the step 8 hand-off):
 
 > I've placed `tutorial.md` at the root of your new HackerNews-demo workspace. After you switch to that window, you'll see it in the file tree. If you ever want to restart or re-run the tutorial, open a fresh chat in that workspace and paste:
 >
@@ -200,8 +201,8 @@ Tell the user in chat:
 **Notes:**
 
 - Never install to `~/.claude/commands/`. The tutorial is one-time onboarding; it shouldn't pollute the user's global slash command list.
-- Never install to the launcher workspace's `.claude/commands/` either. The launcher workspace is throwaway.
-- If the user wants to delete the launcher workspace, fine — `tutorial.md` is in the HN-Tutorial workspace, the canonical home.
+- Never write `tutorial.md` (or anything else) into the launcher workspace. Keep it empty.
+- If the curl re-fetch fails, fall back to writing the in-context tutorial content to `~/Nimbalyst-HN-Tutorial/tutorial.md` directly with the Write tool.
 - On a resume (when `tutorial-progress.json` already exists in the HN-Tutorial workspace), this step is a no-op. The file is already there.
 
 ## 2. Check progress and offer resume
@@ -362,7 +363,7 @@ Tell the user this directly and proceed to step 8. Do not ask for permission; ju
 Use `AskUserQuestion` with two options only:
 
 - **Yes, set it up.** Continue to step 8.
-- **No, I'd rather not right now.** Stop the tutorial. Tell them they can re-run `/tutorial` any time and walk away cleanly. Do not offer a watered-down "narrate only" mode. It doesn't teach anything the doc doesn't.
+- **No, I'd rather not right now.** Stop the tutorial. Tell them they can re-run it any time by pasting the bootstrap prompt again, and walk away cleanly. Do not offer a watered-down "narrate only" mode. It doesn't teach anything the doc doesn't.
 
 If the user pushes back ("I want to run this in my own project"), hold the line: explain that the exercises (HackerNews ads, comment editing) are tuned for a known demo repo and don't translate onto a stranger's codebase, and that the seed files / worktree assumptions need a clean room. Once they finish the tutorial in the clean workspace, the patterns transfer fine to their real work. That's the whole point of doing it once, properly.
 
@@ -395,6 +396,13 @@ Use `gh repo clone KarlWirth/hackernews-react-graphql-demo ~/Nimbalyst-HN-Tutori
 **Important: the upstream demo repo is read-only for the user.** Local commits work fine (they have their own clone), but `git push` and `gh pr create` against the upstream will fail. The tutorial accounts for this. Exercise 3.4 in the dev track is a dry-run of the PR flow, not an actual push. Do **not** improvise workarounds at clone time (forking the user's GitHub, adding scratch remotes, etc.). Just clone and continue.
 
 If the clone fails (network, bad path, permissions): tell the user plainly what failed, offer to retry with a different path, and don't proceed until it succeeds.
+
+Once the clone succeeds, **write `tutorial.md` into the new workspace root** (see step 1b for the rationale). This is the canonical copy the user will own and re-run from. Use the demo path they chose, not the hardcoded default:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/nimbalyst/skills/main/skills/getting-started/tutorial.md \
+  -o <demoPath>/tutorial.md
+```
 
 Store the resolved absolute path as `demoPath` in `tutorial-progress.json` so the resume in the new window can find it.
 
@@ -638,7 +646,7 @@ Then push the user back into the loop they learned in 1.1, this time on a CSV:
 3. **Ask the agent for more.** Back in the chat, paste something like:
 
    > **Paste this:**
-   >
+>
    > Re-read @nimbalyst-local/Product/Feedback/synthesis.csv after my edits and regenerate both charts. Then tell me whether my edits changed the takeaway.
 
 The point: charts aren't the artifact, the decision is. Cleaning the data before trusting the chart is part of the work.
@@ -939,7 +947,7 @@ When the file lands, remind the user how to open it (edited-files list on the ri
 3. **Ask the agent for more.** Paste something like:
 
    > **Paste this:**
-   >
+>
    > In @notes/architecture.md, add a "Gotchas" section with the three non-obvious things a new contributor would trip over.
 
 The map is your context floor for the rest of the chapter. Time spent fixing it pays back every time the agent grounds on it later.
@@ -1681,10 +1689,10 @@ These are the steps to send a new user when sharing the tutorial. **Not displaye
 1. In Nimbalyst, create any workspace (`Cmd+P` → **Create New Workspace** → name it `Tutorial-Launcher` or whatever). This is just where the bootstrap chat lives. The tutorial itself will move into a dedicated HackerNews demo workspace it creates for you.
 2. In that workspace's chat, paste this single prompt:
 
-   > Fetch `https://raw.githubusercontent.com/nimbalyst/skills/main/skills/getting-started/tutorial.md`, save it as `tutorial.md` at the root of this workspace, then read it and run it as the Nimbalyst tutorial. Follow it exactly, wait for me at every exercise.
+   > Fetch `https://raw.githubusercontent.com/nimbalyst/skills/main/skills/getting-started/tutorial.md` and run its contents as the Nimbalyst tutorial. Don't write any files into this launcher workspace. Follow it exactly, wait for me at every exercise.
 
-That's it. One paste. The tutorial takes over, clones the HackerNews demo, walks you through opening that folder as a new workspace, and runs the tutorial there. The launcher workspace can be deleted when done.
+That's it. One paste. The tutorial takes over, clones the HackerNews demo, walks you through opening that folder as a new workspace, and runs the tutorial there. The launcher workspace stays empty and can be deleted when done.
 
-**Note on re-running:** the tutorial copies `tutorial.md` into the new HackerNews-demo workspace as a regular file, so re-running it is just opening that workspace and pasting `Run @tutorial.md` into a chat. No slash command, no global install, no pollution of your real projects.
+**Note on re-running:** once the tutorial creates the HackerNews-demo workspace, it writes `tutorial.md` into that workspace as a regular file. Re-running it is just opening that workspace and pasting `Run @tutorial.md` into a chat. No slash command, no global install, and nothing left behind in the launcher or your real projects.
 
 **Browsable page (for someone who wants to read it before downloading):** `https://github.com/nimbalyst/skills/blob/main/skills/getting-started/tutorial.md`
