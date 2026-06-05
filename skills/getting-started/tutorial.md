@@ -1718,12 +1718,12 @@ These are the steps to send a new user when sharing the tutorial. **Not displaye
 - **Karl's external test workspace:** `~/Desktop/Desktop/Test Nimbalyst/.claude/commands/tutorial.md`.
 - All four `tutorial.md` copies need to stay in sync. Sync command after edits:
 
-  ```bash
+```bash
   cp UserDocs/tutorials/tutorial.md .claude/commands/tutorial.md && \
     cp UserDocs/tutorials/tutorial.md "/Users/karlwirth/Desktop/Desktop/Test Nimbalyst/.claude/commands/tutorial.md" && \
     cp UserDocs/tutorials/tutorial.md /Users/karlwirth/GitHub/KarlWirth/nimbalyst-skills/skills/getting-started/tutorial.md && \
     (cd /Users/karlwirth/GitHub/KarlWirth/nimbalyst-skills && git add skills/getting-started/ && git commit -m "Update tutorial.md" && git push)
-  ```
+```
 
 ## Known friction points (for when you fix product)
 
