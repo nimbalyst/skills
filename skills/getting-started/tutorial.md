@@ -1692,49 +1692,14 @@ Shared:
 
 These are the steps to send a new user when sharing the tutorial. **Not displayed to the user inside the tutorial**, just here so you can find them.
 
-1. Download the tutorial: open `https://raw.githubusercontent.com/nimbalyst/skills/main/skills/getting-started/tutorial.md` in your browser, then **File → Save Page As** → save as `tutorial.md` to Downloads. (Or `gh` users:  `gh api repos/nimbalyst/skills/contents/skills/getting-started/tutorial.md --jq .download_url | xargs curl -o ~/Downloads/tutorial.md`.)
-2. In Nimbalyst, create any workspace (`Cmd+P` → **Create New Workspace** → name it anything, e.g. `Tutorial-Setup`).
-3. In that workspace's chat, paste: "Read ~/Downloads/tutorial.md and run it as the Nimbalyst tutorial. Follow it exactly, wait for me at every exercise."
-4. The tutorial starts. It offers to self-install as a `/tutorial` slash command (one click), then runs.
+1. In Nimbalyst, create any workspace (`Cmd+P` → **Create New Workspace** → name it anything, e.g. `Tutorial-Setup`).
+2. In that workspace's chat, paste this single prompt:
+
+   > Download `https://raw.githubusercontent.com/nimbalyst/skills/main/skills/getting-started/tutorial.md` to `~/.claude/commands/tutorial.md` (create the directory if it doesn't exist). Then read the file and run it as the Nimbalyst tutorial. Follow it exactly, wait for me at every exercise.
+
+3. The tutorial starts. `/tutorial` is now installed globally too, so you can rerun it from any workspace.
+
+That's it. One workspace, one paste, no browser download, no Save As dance.
 
 **Browsable page (for someone who wants to read it before downloading):** `https://github.com/nimbalyst/skills/blob/main/skills/getting-started/tutorial.md`
-
-## What the tutorial then does for the user (so you know what they'll see)
-
-- Offers to self-install as `/tutorial` so future runs are one keystroke.
-- Asks a few profiling questions (role, stack, focus) to pick the PM or dev track.
-- Checks for git; if missing, installs it (xcode-select on Mac, winget on Windows, package manager on Linux).
-- Clones the HackerNews demo to `~/Nimbalyst-HN-Tutorial`.
-- Walks the user through opening that folder as a new Nimbalyst workspace (`Cmd+P` → Open Workspace Folder).
-- The user switches windows and resumes the tutorial. The new window is where the actual tutorial runs.
-- 35 to 45 minutes of guided exercises, one chat thread, one workspace.
-
-## Where tutorial.md and its images live
-
-- **Source of truth:** `UserDocs/tutorials/tutorial.md` in the nimbalyst-code repo. Edit here.
-- **Public distribution:** `skills/getting-started/tutorial.md` in `nimbalyst/skills` (public GitHub repo).
-- **Public images:** `skills/getting-started/images/*.webp` in `nimbalyst/skills`.
-- **Karl's local slash command (this repo):** `.claude/commands/tutorial.md`.
-- **Karl's external test workspace:** `~/Desktop/Desktop/Test Nimbalyst/.claude/commands/tutorial.md`.
-- All four `tutorial.md` copies need to stay in sync. Sync command after edits:
-
-```bash
-  cp UserDocs/tutorials/tutorial.md .claude/commands/tutorial.md && \
-    cp UserDocs/tutorials/tutorial.md "/Users/karlwirth/Desktop/Desktop/Test Nimbalyst/.claude/commands/tutorial.md" && \
-    cp UserDocs/tutorials/tutorial.md /Users/karlwirth/GitHub/KarlWirth/nimbalyst-skills/skills/getting-started/tutorial.md && \
-    (cd /Users/karlwirth/GitHub/KarlWirth/nimbalyst-skills && git add skills/getting-started/ && git commit -m "Update tutorial.md" && git push)
-```
-
-## Known friction points (for when you fix product)
-
-What's still manual and what would remove it:
-
-- **Step 1 (download tutorial.md)**, manual Save As from a browser. Fixed by bundling `/tutorial` as a built-in skill in Nimbalyst.
-- **Step 2 (create a throwaway workspace just to host the bootstrap chat)**, feels silly. Fixed by either bundling the skill, OR adding a "Start Tutorial" button in the Project Manager that does everything in one click.
-- **Switching windows after the clone**, the tutorial pauses while the user manually opens the new workspace folder. Fixed by exposing `open_workspace` MCP in packaged builds.
-
-With those three product changes, the share message becomes:
-
-1. Download Nimbalyst.
-2. Open it. Click **Start Tutorial**.
 
