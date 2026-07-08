@@ -199,7 +199,7 @@ Three exercises on the user's own repo, about ten minutes, plus one optional wor
 
 ## Exercise D1: A run-and-test guide for your repo (~3 minutes)
 
-One sentence of setup, no more: the fastest way to feel the loop is to have the agent read just your README and manifest and write the newcomer's guide this repo probably doesn't have yet. Single agent, two files, no codebase spelunking.
+One sentence of setup, no more: the fastest way to feel the loop is to have the agent read just your README and manifest and turn them into a short run-and-test guide. Single agent, two files, no codebase spelunking.
 
 > **Paste this:**
 >
