@@ -30,7 +30,7 @@ The full tutorial (35 to 45 minutes, on a safe demo codebase) goes much deeper: 
 
 By the end, the user should have:
 
-- one artifact they made about their own work (PM: a working brief and a mockup; dev: an architecture map of their repo and one planned, reviewed change)
+- one artifact they made about their own work (PM: a working brief and a mockup; dev: a run-and-test guide for their repo and one planned, reviewed change)
 - the core loop in their hands: prompt, open the file, edit it by hand, review the diff, ask for more
 - a reason to come back tomorrow, because the artifact is about their actual work, not a demo
 
@@ -197,15 +197,29 @@ Go to the wrap.
 
 Three exercises on the user's own repo, about ten minutes, plus one optional worktree exercise if time allows.
 
-## Exercise D1: Map the codebase with parallel sub-agents (~4 minutes)
+## Exercise D1: A run-and-test guide for your repo (~3 minutes)
 
-One sentence of setup, no more: three read-only sub-agents fan out at once and return a usable map of a codebase that would otherwise take an afternoon to spelunk.
+One sentence of setup, no more: the fastest way to feel the loop is to have the agent read just your README and manifest and write the newcomer's guide this repo probably doesn't have yet. Single agent, two files, no codebase spelunking.
 
 > **Paste this:**
 >
-> Spawn three parallel read-only sub-agents to map this repo. One maps the structure and entry points. One maps the core logic and data flow. One maps tests, build, and tooling. Each report stays under 200 words and names key files. Synthesize everything into nimbalyst-quickstart/architecture.md with a ten-line summary at the top. Don't change any code.
+> Read only this repo's README and its root package.json (or whatever the manifest is). Don't scan the rest of the codebase. Write a short newcomer's guide at nimbalyst-quickstart/getting-started.md: one sentence on what this project is, the exact commands to install, run, build, and test it, and the two things most likely to trip someone up on their first day. Keep it under a page and don't change any code.
 
-You paste this in **Agent Mode** (the chat you're in). When the file lands, name the mode and give the open-paths reminder: it's in the **edited-files list on the right** (Agent Mode), and you open it for real review by switching to **Files Mode** (`Cmd+E`). Have them switch to Files Mode and fix **one** thing the map got wrong; there's usually something. Tell them the edit is the point: the map is theirs now, and future sessions can ground on it with `@nimbalyst-quickstart/architecture.md`.
+You paste this in **Agent Mode** (the chat you're in). It lands in a few seconds; while it works, one sentence only: it's reading two files and writing a file into the workspace, not a chat answer that scrolls away.
+
+Then run the core loop, three moves, one per turn.
+
+**Move 1: review the diff in Files Mode.** When `getting-started.md` lands it shows up in the **edited-files list on the right** (that panel only exists in Agent Mode, where you are now). Send them to **Files Mode** (`Cmd+E`) and have them open it: the whole file is green because it's all new, pending in the **diff approval bar at the top of the editor**. Have them click **Keep All**. Tell them this is the same red/green diff they'll see for every AI change, doc or code.
+
+**Move 2: fix one command by hand.** You know your own repo better than a README-scraper does. Correct a command it got slightly wrong, or add the one it missed (the exact test invocation, an env var it forgot). Type straight into the file; it's yours now. Come back when you've made at least one edit.
+
+**Move 3: ask for more.**
+
+> **Paste this:**
+>
+> Re-read @nimbalyst-quickstart/getting-started.md now that I've fixed the commands. Add a short "Project layout" section: the top five folders at the repo root and one line on what each is for. Only the top level, don't scan deep into the tree.
+
+When the new diff appears, point out `Keep` and `Revert` per chunk: they don't have to take all of it. The guide is theirs now, and future sessions can ground on it with `@nimbalyst-quickstart/getting-started.md`.
 
 ## Exercise D2: One small change, planned first (~5 minutes)
 
@@ -215,7 +229,7 @@ Teach in one short paragraph: Plan Mode keeps the agent read-only until the plan
 
 > **Paste this:**
 >
-> Propose the smallest genuinely useful improvement you can find in this repo. Hard limits: at most two files, no new dependencies, no behavior change a user would notice. Good candidates: a missing test for an obvious edge case, dead code that can go, a confusing name, a gap in a doc or README. Ground your pick on @nimbalyst-quickstart/architecture.md. Plan only, no code yet.
+> Propose the smallest genuinely useful improvement you can find in this repo. Hard limits: at most two files, no new dependencies, no behavior change a user would notice. Good candidates: a missing test for an obvious edge case, dead code that can go, a confusing name, a gap in a doc or README. Ground your pick on @nimbalyst-quickstart/getting-started.md. Plan only, no code yet.
 
 Let them push back in chat until the plan reads right. "Pick a different candidate" is a fine response; revise until they'd approve it.
 
@@ -241,7 +255,7 @@ Teach in two sentences: a worktree is a separate working copy of this repo on it
 
 > **Paste this:**
 >
-> Create a worktree on branch chore/agent-notes. In it, add a short "Working with agents here" section to the README (or a NOTES.md if the README shouldn't change): the build and test commands, plus the two most confusing parts of this codebase for a newcomer, based on nimbalyst-quickstart/architecture.md. Report back when done.
+> Create a worktree on branch chore/agent-notes. In it, add a short "Working with agents here" section to the README (or a NOTES.md if the README shouldn't change): the build and test commands, plus the two most confusing parts of this codebase for a newcomer, based on nimbalyst-quickstart/getting-started.md. Report back when done.
 
 ![Worktrees](https://raw.githubusercontent.com/nimbalyst/skills/main/skills/getting-started/images/feature-worktree-sessions.webp)
 
@@ -257,7 +271,7 @@ Go to the wrap.
 
 # WRAP (both tracks, ~2 minutes)
 
-1. **Recap in one line, naming their files.** PM: `nimbalyst-quickstart/brief.md` and the mockup. Dev: `nimbalyst-quickstart/architecture.md` and the change they kept (or deliberately reverted).
+1. **Recap in one line, naming their files.** PM: `nimbalyst-quickstart/brief.md` and the mockup. Dev: `nimbalyst-quickstart/getting-started.md` and the change they kept (or deliberately reverted).
 
 2. **The 30-second move that pays off tomorrow.** Have them paste:
 
@@ -284,7 +298,7 @@ One sentence of teaching: `CLAUDE.md` is persistent project memory; every future
 - Pre-flight: under 1 minute
 - Orientation (two modes): about 1 minute
 - PM: P1 ~3, P2 ~3, P3 ~4, wrap ~2 (about 13, ~14 with orientation)
-- Dev: D1 ~4, D2 ~5, D3 optional ~3, wrap ~2 (about 12, ~13 with orientation, ~16 with D3)
+- Dev: D1 ~3, D2 ~5, D3 optional ~3, wrap ~2 (about 11, ~12 with orientation, ~15 with D3)
 
 If the session is over budget entering the last exercise, offer to skip straight to the wrap. Finishing early is better than finishing complete.
 
@@ -309,8 +323,8 @@ If the session is over budget entering the last exercise, offer to skip straight
 
 - Shared orientation: Files Mode and Agent Mode via the top-left mode switcher; the sessions list (left) and edited-files list (right)
 - PM: file writes, edited-files list, diff bar (Keep All / per-chunk), hand editing, `@file` grounding, mockup editor with annotations. No code-diff screenshot (the markdown brief is the artifact); the diff image lives in the dev track only.
-- Dev: parallel sub-agents, hand editing, Plan Mode and the exit widget, diff review (the code-diff screenshot), worktrees (optional)
-- Deliberately excluded (full tutorial covers them): tracker, charts, terminal, commit widget, PR flow, custom slash commands, Excalidraw
+- Dev: README/manifest grounding, hand editing and the accept/ask-for-more loop, Plan Mode and the exit widget, diff review (the code-diff screenshot), worktrees (optional)
+- Deliberately excluded (full tutorial covers them): parallel sub-agents, tracker, charts, terminal, commit widget, PR flow, custom slash commands, Excalidraw
 
 ---
 
