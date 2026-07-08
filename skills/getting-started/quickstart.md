@@ -63,8 +63,8 @@ Before anything else, tell the user:
 - **Never invent slash commands.** Every prompt in this quickstart is plain English on purpose.
 - Detect the OS once (run `uname -s` quietly during pre-flight, store it in the progress file) and translate every shortcut: `Cmd` becomes `Ctrl` and `Option` becomes `Alt` on Windows/Linux.
 - Use correct spatial cues: sessions list on the **left**; edited-files list on the **right**; the chat transcript or editor in the center; the Plan Mode toggle in the bar directly above the message input; the diff approval bar at the top of the editor in Files Mode.
-- **Always name the mode the user should be in, at the start of every exercise and whenever it changes.** Pasting prompts and watching the agent work happen in **Agent Mode** (`Cmd+K`); reading a file and approving a diff happen in **Files Mode** (`Cmd+E`); the switcher is the FILES / split / AGENT control at the top-left. New users lose track of which mode they're in, so never let them guess, and never assume they know they're in one.
-- **Every time a file is saved, remind the user how to open it:** click it in the edited-files list on the right, right-click it there and choose **Open in Files** for the full editor and diff view, quick-open with `Cmd+O` and fuzzy-search the name, or switch to Files Mode with `Cmd+E` and use the tree. After the second save, compress this to one line; never drop it entirely.
+- **Don't bounce the user between modes. Only send them to the editor (Files Mode) when the task truly needs it: drawing on a mockup, or reading and approving a diff.** Pasting prompts and reading the agent's replies work the same from Agent Mode, split view, or Files Mode, so never tell them to switch back just to paste. Opening a file is a click on its path link, which brings up the editor on its own, not a manual mode change. The switcher is the FILES / split / AGENT control at the top-left, and split view shows chat and files at once for anyone who would rather never switch. Name a mode only when a step genuinely needs the editor, and say why; otherwise, wherever they are is fine.
+- **Every time you name a saved file, write it as its workspace-relative path with the folder (e.g. `nimbalyst-quickstart/brief.md`), never a bare filename.** Nimbalyst turns a path that has a folder into a clickable link that opens the file on click; a bare `brief.md` stays dead text. After that clickable path, give the other ways to open it: click it in the edited-files list on the right, right-click it there and choose **Open in Files** for the full editor and diff view, quick-open with `Cmd+O`, or switch to Files Mode with `Cmd+E` and use the tree. After the second save, compress the alternatives to one line, but always keep the file itself as a clickable path; never drop it entirely.
 - **Render every `![alt](url)` screenshot by emitting that exact markdown image line, with the remote `https://` URL unchanged, inline in chat when you reach it.** These are remote images and render as-is in the chat window. Do NOT use the `display_to_user` tool for them, do NOT download them to disk, and do NOT rewrite the URL to a local or relative path. If one fails to render, leave the markdown line as-is and move on. Never summarize or skip them.
 - After every exercise, update `nimbalyst-quickstart/progress.json`.
 - Honor the flow controls at any point: `next`/`got it`/`continue` advances; `repeat` or any question re-explains without advancing; `skip` marks the exercise skipped and moves on; `pause` confirms progress is saved and waits; `resume` reads the progress file, gives a one-sentence recap, and re-issues the current prompt.
@@ -125,7 +125,7 @@ Have them take ten seconds to look around each one, especially the sessions list
 
 Close with:
 
-> Good. We start in Agent Mode, that's where you paste prompts. When it's time to review a file or a diff, I'll send you to Files Mode and say so.
+> Good. We'll mostly stay right here in Agent Mode, and clicking a file opens the editor when you need it. The only times you'll reach for Files Mode yourself are to draw on a mockup or review a diff. Want chat and files side by side the whole time? Use the split view in that same switcher. Otherwise, wherever you are is fine.
 
 ---
 
@@ -143,13 +143,13 @@ Compose the prompt **for** the user with their stated focus already filled in, s
 
 You paste this in **Agent Mode** (the chat you're already in). While it generates, one sentence only: the agent is writing a file into the workspace, not a chat answer that scrolls away.
 
-When the file lands, name the mode and give the full open-paths reminder: it just appeared in the **edited-files list on the right** (that panel only exists in Agent Mode, where you are now); click it there to preview it inline, or switch to **Files Mode** (`Cmd+E`) to open the full editor. Wait for them to confirm they have it open.
+When the file lands, give the open-paths reminder built around the clickable path: point them at `nimbalyst-quickstart/brief.md` (clicking it opens the editor), and mention it also sits in the **edited-files list on the right**. No need to switch modes yourself for this. Wait for them to confirm they have it open.
 
 ## Exercise P2: Make it yours (~3 minutes)
 
 The brief is on disk but it is still the agent's. Three moves, stage-gated, one per turn.
 
-**Move 1: open it, then review the diff in Files Mode.** `brief.md` is sitting in the **edited-files list on the right**. Open it in Files Mode any of three ways: click the file name in that list, right-click it there and choose **Open in Files**, or press `Cmd+E` and open it from the tree. Once it's open, the agent's changes are pending in the **diff approval bar at the top of the editor**; the whole file shows green because it's all new. Have them click **Keep All** to accept it. Tell them this is the same red/green diff they'll see for every AI change, whether it's a markdown doc like this one or code.
+**Move 1: open it, then review the diff in Files Mode.** Point them at `nimbalyst-quickstart/brief.md` (write the full path, not a bare filename, so it renders as a clickable link that opens on click). They can also open it from the **edited-files list on the right**: click the file there, right-click it and choose **Open in Files**, or press `Cmd+E` and open it from the tree. Once it's open, the agent's changes are pending in the **diff approval bar at the top of the editor**; the whole file shows green because it's all new. Have them click **Keep All** to accept it. Tell them this is the same red/green diff they'll see for every AI change, whether it's a markdown doc like this one or code.
 
 **Move 2: edit by hand.** Tell them: change something. Cut the weakest option. Fix the recommendation if it's wrong. Sharpen an open question. Type directly into the file; it's yours now. Come back when you've made at least one edit.
 
@@ -179,9 +179,9 @@ Wait for the file to land.
 
 **Stage 2: annotate.** Tell the user:
 
-> Open `mockup.mockup.html` from the edited-files list on the right. It renders as an interactive mockup, click around it. Then use the drawing tools at the top of the editor to leave **visual marks only**: one circle around something you'd change, one arrow pointing at something to move. Don't type text onto the canvas; the words go in your next prompt. Come back when you're done drawing.
+> Open `nimbalyst-quickstart/mockup.mockup.html` (click that path to open it), or open it from the edited-files list on the right. It renders as an interactive mockup, click around it. Then use the drawing tools at the top of the editor to leave **visual marks only**: one circle around something you'd change, one arrow pointing at something to move. Don't type text onto the canvas; the words go in your next prompt. Come back when you're done drawing.
 
-**Stage 3: v2.** Have them paste (rewriting the bracketed parts in their own words):
+**Stage 3: v2.** No switching needed; right where they are with the mockup open, have them paste (rewriting the bracketed parts in their own words):
 
 > **Paste this:**
 >
@@ -209,7 +209,7 @@ You paste this in **Agent Mode** (the chat you're in). It lands in a few seconds
 
 Then run the core loop, three moves, one per turn.
 
-**Move 1: review the diff in Files Mode.** When `getting-started.md` lands it shows up in the **edited-files list on the right** (that panel only exists in Agent Mode, where you are now). Open it in Files Mode any of three ways: click the file name in that list, right-click it there and choose **Open in Files**, or press `Cmd+E` and open it from the tree. The whole file is green because it's all new, pending in the **diff approval bar at the top of the editor**. Have them click **Keep All**. Tell them this is the same red/green diff they'll see for every AI change, doc or code.
+**Move 1: review the diff in Files Mode.** When it lands, point them at `nimbalyst-quickstart/getting-started.md` (write the full path so it renders as a clickable link that opens on click). They can also open it from the **edited-files list on the right** (that panel only exists in Agent Mode, where you are now): click the file there, right-click it and choose **Open in Files**, or press `Cmd+E` and open it from the tree. The whole file is green because it's all new, pending in the **diff approval bar at the top of the editor**. Have them click **Keep All**. Tell them this is the same red/green diff they'll see for every AI change, doc or code.
 
 **Move 2: fix one command by hand.** You know your own repo better than a README-scraper does. Correct a command it got slightly wrong, or add the one it missed (the exact test invocation, an env var it forgot). Type straight into the file; it's yours now. Come back when you've made at least one edit.
 
@@ -243,7 +243,7 @@ Then implement the approved plan and nothing more.
 
 ![Diff review](https://raw.githubusercontent.com/nimbalyst/skills/main/skills/getting-started/images/ai-diff-review.webp)
 
-Have them open the changed file in Files Mode. The diff bar at the top shows `Keep` and `Revert` per chunk. Tell them to read every chunk, then say this plainly:
+Have them open the changed file by clicking its path, which brings up the editor and its diff bar. The diff bar at the top shows `Keep` and `Revert` per chunk. Tell them to read every chunk, then say this plainly:
 
 > Keep it if it's good. And if you'd rather not have it in your repo at all, click **Revert All**. A revert is a first-class ending here, the loop you just ran (plan, push back, approve, review) is the thing to keep.
 
