@@ -30,14 +30,14 @@ The full tutorial (35 to 45 minutes, on a safe demo codebase) goes much deeper: 
 
 By the end, the user should have:
 
-- one artifact they made about their own work (PM: a working brief and a mockup; dev: a run-and-test guide for their repo and one planned, reviewed change)
+- one artifact they made about their own work (PM: a working brief and a mockup; dev: a run-and-test guide and an architecture diagram of their repo, plus two agents run in parallel)
 - the core loop in their hands: prompt, open the file, edit it by hand, review the diff, ask for more
 - a reason to come back tomorrow, because the artifact is about their actual work, not a demo
 
 ## Hard constraints
 
 - **Keep the pace brisk and take the user through every exercise; never skip one to save time.** The quickstart is meant to run in about 15 minutes. If a generation is about to run long, tighten the ask itself rather than cutting the exercise.
-- **Everything the quickstart writes goes under `nimbalyst-quickstart/` at the workspace root.** One folder. The user can delete it afterward and the workspace is exactly as it was. The only exceptions are deliberate and user-approved: the dev track's planned change (D2), the optional worktree chore (D3), and the closing `CLAUDE.md` move.
+- **Everything the quickstart writes goes under `nimbalyst-quickstart/` at the workspace root.** One folder. The user can delete it afterward and the workspace is exactly as it was. The only exceptions are deliberate and user-approved: the dev track's worktree stream (D3), which creates a branch and a `NOTES.md` inside an isolated worktree, and the closing `CLAUDE.md` move.
 - No demo repo, no `git clone`, no `npm install`, no toolchain ceremony. The only upfront tour is the two core modes, about 60 seconds (see "Get oriented"). Teach every other surface at the moment the user touches it, not before.
 
 ## Maintainer note
@@ -62,13 +62,13 @@ Before anything else, tell the user:
 - Never use em dashes. Never use the word "beat" or "beats" in chat.
 - **Never invent slash commands.** Every prompt in this quickstart is plain English on purpose.
 - Detect the OS once (run `uname -s` quietly during pre-flight, store it in the progress file) and translate every shortcut: `Cmd` becomes `Ctrl` and `Option` becomes `Alt` on Windows/Linux.
-- Use correct spatial cues: sessions list on the **left**; edited-files list on the **right**; the chat transcript or editor in the center; the Plan Mode toggle in the bar directly above the message input; the diff approval bar at the top of the editor in Files Mode.
+- Use correct spatial cues: sessions list on the **left**; edited-files list on the **right**; the chat transcript or editor in the center; the worktree panel in the left sidebar; the diff approval bar at the top of the editor in Files Mode.
 - **Don't bounce the user between modes. Only send them to the editor (Files Mode) when the task truly needs it: drawing on a mockup, or reading and approving a diff.** Pasting prompts and reading the agent's replies work the same from Agent Mode, split view, or Files Mode, so never tell them to switch back just to paste. Opening a file is a click on its path link, which brings up the editor on its own, not a manual mode change. The switcher is the FILES / split / AGENT control at the top-left, and split view shows chat and files at once for anyone who would rather never switch. Name a mode only when a step genuinely needs the editor, and say why; otherwise, wherever they are is fine.
 - **Every time you name a saved file, write it as its workspace-relative path with the folder (e.g. `nimbalyst-quickstart/brief.md`), never a bare filename.** Nimbalyst turns a path that has a folder into a clickable link that opens the file on click; a bare `brief.md` stays dead text. After that clickable path, give the other ways to open it: click it in the edited-files list on the right, right-click it there and choose **Open in Files** for the full editor and diff view, quick-open with `Cmd+O`, or switch to Files Mode with `Cmd+E` and use the tree. After the second save, compress the alternatives to one line, but always keep the file itself as a clickable path; never drop it entirely.
 - **Render every `![alt](url)` screenshot by emitting that exact markdown image line, with the remote `https://` URL unchanged, inline in chat when you reach it.** These are remote images and render as-is in the chat window. Do NOT use the `display_to_user` tool for them, do NOT download them to disk, and do NOT rewrite the URL to a local or relative path. If one fails to render, leave the markdown line as-is and move on. Never summarize or skip them.
 - After every exercise, update `nimbalyst-quickstart/progress.json`.
 - Honor the flow controls at any point: `next`/`got it`/`continue` advances; `repeat` or any question re-explains without advancing; `skip` marks the exercise skipped and moves on; `pause` confirms progress is saved and waits; `resume` reads the progress file, gives a one-sentence recap, and re-issues the current prompt.
-- If a named tool is unavailable, say so plainly and use the nearest fallback. If the mockup editor is unavailable, replace P3 with a second document iteration. If worktrees are unavailable, skip D3 without ceremony.
+- If a named tool is unavailable, say so plainly and use the nearest fallback. If the mockup editor is unavailable, replace P3 with a second document iteration. If the Excalidraw editor is unavailable, have D2 draw the same architecture as a Mermaid diagram in a markdown file instead. If worktrees are unavailable, run both D3 streams as ordinary sessions.
 
 ## Pre-flight (keep it under 60 seconds)
 
@@ -195,7 +195,7 @@ Go to the wrap.
 
 # DEV TRACK
 
-Three exercises on the user's own repo, about ten minutes, plus one optional worktree exercise if time allows.
+Three exercises on the user's own repo, about ten minutes: a run-and-test guide, an architecture diagram, and two agents running in parallel.
 
 ## Exercise D1: A run-and-test guide for your repo (~3 minutes)
 
@@ -221,49 +221,43 @@ Then run the core loop, three moves, one per turn.
 
 When the new diff appears, point out `Keep` and `Revert` per chunk: they don't have to take all of it. The guide is theirs now, and future sessions can ground on it with `@nimbalyst-quickstart/getting-started.md`.
 
-## Exercise D2: One small change, planned first (~5 minutes)
+## Exercise D2: An architecture diagram from your guide (~3 minutes)
 
-Teach in one short paragraph: Plan Mode keeps the agent read-only until the plan is approved. You argue with the plan, not with a diff after the fact. The toggle lives in the bar directly above the message input (`Shift+Tab` in most providers).
+One sentence of setup: the fastest way to see Nimbalyst's visual editors is to turn the guide you just made into an architecture diagram, no repo scan, just a picture of what you already documented.
 
-**Stage 1: plan.** Have them switch into Plan Mode, then paste:
-
-> **Paste this:**
->
-> Propose the smallest genuinely useful improvement you can find in this repo. Hard limits: at most two files, no new dependencies, no behavior change a user would notice. Good candidates: a missing test for an obvious edge case, dead code that can go, a confusing name, a gap in a doc or README. Ground your pick on @nimbalyst-quickstart/getting-started.md. Plan only, no code yet.
-
-Let them push back in chat until the plan reads right. "Pick a different candidate" is a fine response; revise until they'd approve it.
-
-**Stage 2: exit Plan Mode and implement.** Warn them about the exit widget wording before they click:
-
-> The "ready to exit planning mode" widget is about to appear, and both "Yes" options mention implementing. Pick **"Yes, proceed in this same session."** I'll implement exactly the plan we agreed on, right here, and nothing lands without going through diff review.
-
-Then implement the approved plan and nothing more.
-
-**Stage 3: review the diff like you mean it.**
-
-![Diff review](https://raw.githubusercontent.com/nimbalyst/skills/main/skills/getting-started/images/ai-diff-review.webp)
-
-Have them open the changed file by clicking its path, which brings up the editor and its diff bar. The diff bar at the top shows `Keep` and `Revert` per chunk. Tell them to read every chunk, then say this plainly:
-
-> Keep it if it's good. And if you'd rather not have it in your repo at all, click **Revert All**. A revert is a first-class ending here, the loop you just ran (plan, push back, approve, review) is the thing to keep.
-
-## Exercise D3 (optional, ~3 more minutes): Spawn a worktree
-
-Only offer this if the workspace root is the git repo root (check `git rev-parse --show-toplevel` against the workspace root). If it is not a git repo, mention worktrees in one sentence during the wrap and move on.
-
-Teach in two sentences: a worktree is a separate working copy of this repo on its own branch in its own folder, with its own agent sessions. Agents working in it cannot touch your working tree, which is how people run two or three streams in parallel without collisions.
+**Stage 1: generate.**
 
 > **Paste this:**
 >
-> Create a worktree on branch chore/agent-notes. In it, add a short "Working with agents here" section to the README (or a NOTES.md if the README shouldn't change): the build and test commands, plus the two most confusing parts of this codebase for a newcomer, based on nimbalyst-quickstart/getting-started.md. Report back when done.
+> Create an Excalidraw diagram at nimbalyst-quickstart/architecture.excalidraw from @nimbalyst-quickstart/getting-started.md only. Show the main folders or packages as boxes and draw arrows for how they relate. Build it with the Excalidraw editor tools, keep it to one clean screen, and don't scan the rest of the codebase.
+
+Paste this in **Agent Mode**. When it lands, point them at `nimbalyst-quickstart/architecture.excalidraw` (clicking it opens the Excalidraw editor). One sentence while it draws: the agent is building this on the same visual canvas you can edit by hand.
+
+**Stage 2: make it yours.** Tell them it is a live Excalidraw canvas, not a flat picture: drag a box somewhere that reads better, drop a text note on the part they care about, or draw one more arrow. Come back when they have changed at least one thing. Close with a line: the diagram is theirs now, and they and the agent are editing the same canvas, exactly like the doc in D1.
+
+## Exercise D3: Two agents at once (~4 minutes)
+
+This is the move a plain terminal can't match: more than one agent working at the same time. They start two streams and watch them run side by side, one in an isolated worktree, one right here in this workspace.
+
+If the workspace is not a git repo (check `git rev-parse --show-toplevel`), skip the worktree framing and run both streams as ordinary sessions.
+
+**Stage 1: start the worktree stream first (it takes longest).** In two sentences: a worktree is a separate copy of this repo on its own branch in its own folder, with its own sessions, and an agent working there cannot touch your working tree. Have them open a new session from the sessions list on the left and paste:
+
+> **Paste this:**
+>
+> Create a worktree on branch chore/agent-notes. In it, write a short NOTES.md with the build and test commands from @nimbalyst-quickstart/getting-started.md plus the two things a newcomer should know first. Report back when done, and don't touch my main working tree.
 
 ![Worktrees](https://raw.githubusercontent.com/nimbalyst/skills/main/skills/getting-started/images/feature-worktree-sessions.webp)
 
-While it runs, walk them through the panel:
+Don't wait for it. The moment it's running, move on.
 
-> Look at the worktree panel in the left sidebar. Click the new worktree: the sessions list, the edited-files panel, everything swaps to that context. Click back to Main: your session here is exactly where you left it, and the other agent keeps working in the background.
+**Stage 2: start a second, read-only stream.** Have them open one more new session and paste:
 
-When it reports back, they review its diff the same way as D2, and they can delete the worktree afterward if they don't want the change.
+> **Paste this:**
+>
+> Read @nimbalyst-quickstart/getting-started.md and this repo's root package.json, and tell me the three commands a brand-new contributor will run most, and why. Don't change any files.
+
+**Stage 3: watch them run at once.** Point them at the left sidebar: the read-only session is working in the sessions list, the worktree stream is running under the worktree panel, both at the same time. That is the one-person-team moment, two agents on two jobs, and you review whichever finishes first. Clicking the worktree swaps the whole left side into its context; clicking back to Main returns here. When the worktree reports back, they can read its NOTES.md and delete the worktree afterward if they don't want it.
 
 Go to the wrap.
 
@@ -271,7 +265,7 @@ Go to the wrap.
 
 # WRAP (both tracks, ~2 minutes)
 
-1. **Recap in one line, naming their files.** PM: `nimbalyst-quickstart/brief.md` and the mockup. Dev: `nimbalyst-quickstart/getting-started.md` and the change they kept (or deliberately reverted).
+1. **Recap in one line, naming their files.** PM: `nimbalyst-quickstart/brief.md` and the mockup. Dev: `nimbalyst-quickstart/getting-started.md`, the architecture diagram, and the two agents they ran in parallel.
 
 2. **The 30-second move that pays off tomorrow.** Have them paste:
 
@@ -287,7 +281,7 @@ One sentence of teaching: `CLAUDE.md` is persistent project memory; every future
 >
 > > Fetch `https://raw.githubusercontent.com/nimbalyst/skills/main/skills/getting-started/tutorial.md`, save it as `tutorial.md` at the root of this workspace, then run it as the Nimbalyst tutorial. Follow it exactly, wait for me at every exercise.
 
-4. **Close cleanly.** Mark the quickstart complete in `nimbalyst-quickstart/progress.json`. Final lines to the user: re-run this any time with `Run @nimbalyst-quickstart/quickstart.md`. Everything the quickstart made lives in `nimbalyst-quickstart/`; delete that folder whenever you like and the workspace is back to where it started (dev track: except the change you chose to keep).
+4. **Close cleanly.** Mark the quickstart complete in `nimbalyst-quickstart/progress.json`. Final lines to the user: re-run this any time with `Run @nimbalyst-quickstart/quickstart.md`. Everything the quickstart made lives in `nimbalyst-quickstart/`; delete that folder whenever you like and the workspace is back to where it started (dev track: except the worktree you spun up, which you can delete separately).
 
 ---
 
@@ -298,7 +292,7 @@ One sentence of teaching: `CLAUDE.md` is persistent project memory; every future
 - Pre-flight: under 1 minute
 - Orientation (two modes): about 1 minute
 - PM: P1 ~3, P2 ~3, P3 ~4, wrap ~2 (about 13, ~14 with orientation)
-- Dev: D1 ~3, D2 ~5, D3 optional ~3, wrap ~2 (about 11, ~12 with orientation, ~15 with D3)
+- Dev: D1 ~3, D2 ~3, D3 ~4, wrap ~2 (about 13, ~14 with orientation)
 
 Take the user through every exercise. Do not skip or shortcut an exercise to save time; if a generation risks running long, tighten the ask itself instead.
 
@@ -322,9 +316,9 @@ Take the user through every exercise. Do not skip or shortcut an exercise to sav
 ## Surfaces touched (for maintainers)
 
 - Shared orientation: Files Mode and Agent Mode via the top-left mode switcher; the sessions list (left) and edited-files list (right)
-- PM: file writes, edited-files list, diff bar (Keep All / per-chunk), hand editing, `@file` grounding, mockup editor with annotations. No code-diff screenshot (the markdown brief is the artifact); the diff image lives in the dev track only.
-- Dev: README/manifest grounding, hand editing and the accept/ask-for-more loop, Plan Mode and the exit widget, diff review (the code-diff screenshot), worktrees (optional)
-- Deliberately excluded (full tutorial covers them): parallel sub-agents, tracker, charts, terminal, commit widget, PR flow, custom slash commands, Excalidraw
+- PM: file writes, edited-files list, diff bar (Keep All / per-chunk), hand editing, `@file` grounding, mockup editor with annotations.
+- Dev: README/manifest grounding, hand editing, the Excalidraw diagram editor, parallel agent sessions, and an isolated worktree
+- Deliberately excluded (full tutorial covers them): parallel sub-agents, Plan Mode, reviewing a real code diff, tracker, charts, terminal, commit widget, PR flow, custom slash commands
 
 ---
 
