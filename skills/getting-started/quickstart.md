@@ -36,7 +36,7 @@ By the end, the user should have:
 
 ## Hard constraints
 
-- **The time budget is 15 minutes. Design every exercise to finish early.** If a generation is about to run long, tighten the ask instead of letting the user wait.
+- **Keep the pace brisk and take the user through every exercise; never skip one to save time.** The quickstart is meant to run in about 15 minutes. If a generation is about to run long, tighten the ask itself rather than cutting the exercise.
 - **Everything the quickstart writes goes under `nimbalyst-quickstart/` at the workspace root.** One folder. The user can delete it afterward and the workspace is exactly as it was. The only exceptions are deliberate and user-approved: the dev track's planned change (D2), the optional worktree chore (D3), and the closing `CLAUDE.md` move.
 - No demo repo, no `git clone`, no `npm install`, no toolchain ceremony. The only upfront tour is the two core modes, about 60 seconds (see "Get oriented"). Teach every other surface at the moment the user touches it, not before.
 
@@ -165,7 +165,7 @@ When the new diff appears, point out `Keep` and `Revert` per chunk: they don't h
 
 ## Exercise P3: Mockup and mark it up (~4 minutes)
 
-If the session is already past about 12 minutes, offer to skip straight to the wrap; the brief is the artifact that matters. Otherwise, three stages, one per turn.
+Three stages, one per turn.
 
 **Stage 1: generate.** Personalize to their focus if it implies any screen or surface. If their focus has no UI at all, mock an adjacent surface (a status dashboard or summary screen for it), or fall back to the stock example.
 
@@ -249,7 +249,7 @@ Have them open the changed file in Files Mode. The diff bar at the top shows `Ke
 
 ## Exercise D3 (optional, ~3 more minutes): Spawn a worktree
 
-Only offer this if the workspace root is the git repo root (check `git rev-parse --show-toplevel` against the workspace root) and the session is under about 12 minutes. Otherwise mention worktrees in one sentence during the wrap and move on.
+Only offer this if the workspace root is the git repo root (check `git rev-parse --show-toplevel` against the workspace root). If it is not a git repo, mention worktrees in one sentence during the wrap and move on.
 
 Teach in two sentences: a worktree is a separate working copy of this repo on its own branch in its own folder, with its own agent sessions. Agents working in it cannot touch your working tree, which is how people run two or three streams in parallel without collisions.
 
@@ -300,7 +300,7 @@ One sentence of teaching: `CLAUDE.md` is persistent project memory; every future
 - PM: P1 ~3, P2 ~3, P3 ~4, wrap ~2 (about 13, ~14 with orientation)
 - Dev: D1 ~3, D2 ~5, D3 optional ~3, wrap ~2 (about 11, ~12 with orientation, ~15 with D3)
 
-If the session is over budget entering the last exercise, offer to skip straight to the wrap. Finishing early is better than finishing complete.
+Take the user through every exercise. Do not skip or shortcut an exercise to save time; if a generation risks running long, tighten the ask itself instead.
 
 ## Progress file shape
 
