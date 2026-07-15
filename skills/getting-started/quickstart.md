@@ -30,8 +30,8 @@ The full tutorial (35 to 45 minutes, on a safe demo codebase) goes much deeper: 
 
 By the end, the user should have:
 
-- one artifact they made about their own work (PM: a working brief and a mockup; dev: a run-and-test guide and an architecture diagram of their repo, plus two agents run in parallel)
-- the core loop in their hands: prompt, open the file, edit it by hand, review the diff, ask for more
+- one artifact they made about their own work (PM: a working brief with an embedded mockup; dev: a run-and-test guide with an embedded architecture diagram, plus two agents run in parallel)
+- the core loop in their hands: prompt, open the file, edit it by hand, review the diff, embed one visual file inside another, ask for more
 - a reason to come back tomorrow, because the artifact is about their actual work, not a demo
 
 ## Hard constraints
@@ -62,7 +62,8 @@ Before anything else, tell the user:
 - Never use em dashes. Never use the word "beat" or "beats" in chat.
 - **Never invent slash commands.** Every prompt in this quickstart is plain English on purpose.
 - Detect the OS once (run `uname -s` quietly during pre-flight, store it in the progress file) and translate every shortcut: `Cmd` becomes `Ctrl` and `Option` becomes `Alt` on Windows/Linux.
-- Use correct spatial cues: sessions list on the **left**; edited-files list on the **right**; the chat transcript or editor in the center; the worktree panel in the left sidebar; the diff approval bar at the top of the editor in Files Mode.
+- **Never guess a session name or UI label.** Before telling the user which session to click, inspect the visible sessions list or use the available Nimbalyst session tools to get the exact current title, then quote that title verbatim. If neither is available, ask the user what the active session is called.
+- Use correct spatial cues: sessions list on the **left**; edited-files list on the **right**; the chat transcript or editor in the center; worktree sessions in the sessions list on the left, marked with a worktree icon; the diff approval bar at the top of the editor in Files Mode.
 - **Don't bounce the user between modes. Only send them to the editor (Files Mode) when the task truly needs it: drawing on a mockup, or reading and approving a diff.** Pasting prompts and reading the agent's replies work the same from Agent Mode, split view, or Files Mode, so never tell them to switch back just to paste. Opening a file is a click on its path link, which brings up the editor on its own, not a manual mode change. The switcher is the FILES / split / AGENT control at the top-left, and split view shows chat and files at once for anyone who would rather never switch. Name a mode only when a step genuinely needs the editor, and say why; otherwise, wherever they are is fine.
 - **Every time you name a saved file, write it as its workspace-relative path with the folder (e.g. `nimbalyst-quickstart/brief.md`), never a bare filename.** Nimbalyst turns a path that has a folder into a clickable link that opens the file on click; a bare `brief.md` stays dead text. After that clickable path, give the other ways to open it: click it in the edited-files list on the right, right-click it there and choose **Open in Files** for the full editor and diff view, quick-open with `Cmd+O`, or switch to Files Mode with `Cmd+E` and use the tree. After the second save, compress the alternatives to one line, but always keep the file itself as a clickable path; never drop it entirely.
 - **Render every `![alt](url)` screenshot by emitting that exact markdown image line, with the remote `https://` URL unchanged, inline in chat when you reach it.** These are remote images and render as-is in the chat window. Do NOT use the `display_to_user` tool for them, do NOT download them to disk, and do NOT rewrite the URL to a local or relative path. If one fails to render, leave the markdown line as-is and move on. Never summarize or skip them.
@@ -131,7 +132,7 @@ Close with:
 
 # PM TRACK
 
-Three exercises, about ten minutes of work. All files go under `nimbalyst-quickstart/`.
+Three exercises, about eleven minutes of work. All files go under `nimbalyst-quickstart/`.
 
 ## Exercise P1: A working brief on your actual work (~3 minutes)
 
@@ -144,6 +145,8 @@ Compose the prompt **for** the user with their stated focus already filled in, s
 You paste this in **Agent Mode** (the chat you're already in). While it generates, one sentence only: the agent is writing a file into the workspace, not a chat answer that scrolls away.
 
 When the file lands, give the open-paths reminder built around the clickable path: point them at `nimbalyst-quickstart/brief.md` (clicking it opens the editor), and mention it also sits in the **edited-files list on the right**. No need to switch modes yourself for this. Wait for them to confirm they have it open.
+
+**Session-name checkpoint.** Before referring to the current session, inspect the visible sessions list or use the available Nimbalyst session tools to get its exact current title. Quote that title verbatim when you tell the user where this work is saved in the sessions list. Never assume it is called "Nimbalyst quickstart" or invent a descriptive name. If you cannot inspect it, ask the user to read the highlighted session title and repeat their answer exactly.
 
 ## Exercise P2: Make it yours (~3 minutes)
 
@@ -163,9 +166,9 @@ When the new diff appears, point out `Keep` and `Revert` per chunk: they don't h
 
 **Checkpoint:** this loop (accept, edit by hand, ask for more) is how most work in Nimbalyst happens, on documents, mockups, and code alike.
 
-## Exercise P3: Mockup and mark it up (~4 minutes)
+## Exercise P3: Mockup, mark it up, and embed it (~5 minutes)
 
-Three stages, one per turn.
+Four stages, one per turn.
 
 **Stage 1: generate.** Personalize to their focus if it implies any screen or surface. If their focus has no UI at all, mock an adjacent surface (a status dashboard or summary screen for it), or fall back to the stock example.
 
@@ -188,6 +191,8 @@ Wait for the file to land.
 > Look at my circles and arrows on @nimbalyst-quickstart/mockup.mockup.html and generate a v2. The circle is on [what they circled and what's wrong with it]. The arrow points at [what should change there].
 
 Close with one line: the mockup carries the "where," the chat prompt carries the "what" and "why."
+
+**Stage 4: embed the mockup in the brief by hand.** Point them at `nimbalyst-quickstart/brief.md` and have them open it in the markdown editor. Tell them to go to the end of the document, add a `## Mockup` heading, then type `@` directly on the next line and choose `nimbalyst-quickstart/mockup.mockup.html` from the file mention menu. This is a direct edit in the brief, not an Agent Mode prompt and not a task for the agent. Wait for them to confirm the mockup is embedded. Close with one line: the brief now carries both the written decision and the live screen.
 
 Go to the wrap.
 
@@ -235,21 +240,23 @@ Paste this in **Agent Mode**. When it lands, point them at `nimbalyst-quickstart
 
 **Stage 2: make it yours.** Tell them it is a live Excalidraw canvas, not a flat picture: drag a box somewhere that reads better, drop a text note on the part they care about, or draw one more arrow. Come back when they have changed at least one thing. Close with a line: the diagram is theirs now, and they and the agent are editing the same canvas, exactly like the doc in D1.
 
+**Stage 3: embed the diagram in the guide by hand.** Point them at `nimbalyst-quickstart/getting-started.md` and have them open it in the markdown editor. Tell them to place the cursor immediately after the "Project layout" section, type `@` directly in the document, and choose `nimbalyst-quickstart/architecture.excalidraw` from the file mention menu. This is a direct edit in the guide, not an Agent Mode prompt and not a task for the agent. Wait for them to confirm the diagram is embedded. Close with one line: the guide now carries both the written map and the live diagram.
+
 ## Exercise D3: Two agents at once (~4 minutes)
 
-This is the move a plain terminal can't match: more than one agent working at the same time. They start two streams and watch them run side by side, one in an isolated worktree, one right here in this workspace.
+This is the move a plain terminal can't match: more than one agent working at the same time. They create an isolated worktree in the Nimbalyst UI, start one stream inside it, then start a second stream in the main workspace.
 
 If the workspace is not a git repo (check `git rev-parse --show-toplevel`), skip the worktree framing and run both streams as ordinary sessions.
 
-**Stage 1: start the worktree stream first (it takes longest).** In two sentences: a worktree is a separate copy of this repo on its own branch in its own folder, with its own sessions, and an agent working there cannot touch your working tree. Have them open a new session from the sessions list on the left and paste:
+**Stage 1: create the worktree in the UI, then start its stream.** In two sentences: a worktree is a separate copy of this repo on its own branch in its own folder, with its own sessions, and an agent working there cannot touch your working tree. Send them to Agent Mode. At the top of the sessions list on the left, have the user click the **+** button labeled **Create new...**, choose **New Worktree**, create a worktree with branch name `chore/agent-notes`, and enter it. Only after they can see the new worktree session in the sessions list, marked with a worktree icon, should they paste:
 
 > **Paste this:**
 >
-> Create a worktree on branch chore/agent-notes. In it, write a short NOTES.md with the build and test commands from @nimbalyst-quickstart/getting-started.md plus the two things a newcomer should know first. Report back when done, and don't touch my main working tree.
+> You're already inside the chore/agent-notes worktree. Do not create another worktree. Write a short NOTES.md with these build commands: npm run build and cd packages/electron && npm run build:mac:local; these test commands: npm test and npm run test:prepush; and two newcomer notes: Node.js 24+ and npm 11+ are required, and Electron commands run from packages/electron while root commands run from the repository root. Don't change any other files. Report back when done.
 
 ![Worktrees](https://raw.githubusercontent.com/nimbalyst/skills/main/skills/getting-started/images/feature-worktree-sessions.webp)
 
-Don't wait for it. The moment it's running, move on.
+Wait for the user to confirm that the worktree session is running, but don't wait for it to finish. The moment it is running, move on.
 
 **Stage 2: start a second, read-only stream.** Have them open one more new session and paste:
 
@@ -257,7 +264,7 @@ Don't wait for it. The moment it's running, move on.
 >
 > Read @nimbalyst-quickstart/getting-started.md and this repo's root package.json, and tell me the three commands a brand-new contributor will run most, and why. Don't change any files.
 
-**Stage 3: watch them run at once.** Point them at the left sidebar: the read-only session is working in the sessions list, the worktree stream is running under the worktree panel, both at the same time. That is the one-person-team moment, two agents on two jobs, and you review whichever finishes first. Clicking the worktree swaps the whole left side into its context; clicking back to Main returns here. When the worktree reports back, they can read its NOTES.md and delete the worktree afterward if they don't want it.
+**Stage 3: watch them run at once.** Point them at the sessions list on the left: both streams appear in the same list, and the worktree stream is marked with a worktree icon. That is the one-person-team moment, two agents on two jobs, and they review whichever finishes first. Clicking either session opens that chat. Before giving the return instruction, inspect the visible sessions list or use the available Nimbalyst session tools to get the actual title of the current tutorial session. Tell the user to click that exact title to return; never assume it is named "Nimbalyst quickstart." When the worktree reports back, they can read its NOTES.md and delete the worktree afterward if they don't want it.
 
 Go to the wrap.
 
@@ -265,7 +272,7 @@ Go to the wrap.
 
 # WRAP (both tracks, ~2 minutes)
 
-1. **Recap in one line, naming their files.** PM: `nimbalyst-quickstart/brief.md` and the mockup. Dev: `nimbalyst-quickstart/getting-started.md`, the architecture diagram, and the two agents they ran in parallel.
+1. **Recap in one line, naming their files.** PM: `nimbalyst-quickstart/brief.md` with `nimbalyst-quickstart/mockup.mockup.html` embedded inside it. Dev: `nimbalyst-quickstart/getting-started.md` with the architecture diagram embedded inside it, and the two agents they ran in parallel.
 
 2. **The 30-second move that pays off tomorrow.** Have them paste:
 
@@ -275,9 +282,19 @@ Go to the wrap.
 
 One sentence of teaching: `CLAUDE.md` is persistent project memory; every future session in this workspace starts sharper because of it.
 
-3. **Point at the full tutorial.** Say this, or close to it:
+3. **Point at the full tutorial with context, not just a link.** Never assume the user already knows what the longer tutorial is or why they would take it. Recap what they learned here using the correct track, explain what the longer tutorial adds and that it runs on a safe demo codebase, then give the GitHub link. If you mention the current session, inspect its actual title first and quote it verbatim.
 
-> That's the quickstart. The full tutorial is the 45-minute version on a safe demo codebase, and it covers what we skipped: parallel worktrees, the tracker kanban, charts from your data, the commit-proposal widget, and the full plan-to-PR loop. When you have the time, create a fresh workspace for it (`Cmd+P`, then **Create New Workspace**, name it `HackerNews-Tutorial`), open a chat there, and paste:
+   **PM recap:**
+
+> That's the quickstart. You used the core Nimbalyst loop on your own work: ask an agent to structure a brief, review its diff, edit it by hand, mark up a visual mockup, and embed that live mockup back into the brief.
+
+   **Dev recap:**
+
+> That's the quickstart. You used the core Nimbalyst loop on your own repo: ask an agent to make a guide, review its diff, edit it by hand, collaborate on an architecture diagram, embed that diagram in the guide, and run two sessions at once.
+
+   **Then continue for either track:**
+
+> If you want to see the complete Nimbalyst workflow, the full tutorial is a guided 45-minute walkthrough on a safe demo codebase, so it does not experiment on your real project. It shows how to turn a plan into tracked work, coordinate parallel worktrees, create charts from project data, review changes, use the commit-proposal widget, and carry a feature through the plan-to-PR loop. The source of truth is the [full tutorial on GitHub](https://github.com/nimbalyst/skills/blob/main/skills/getting-started/tutorial.md), not a local tutorial link. When you have the time, create a fresh workspace for it (`Cmd+P`, then **Create New Workspace**, name it `HackerNews-Tutorial`), open a chat there, and paste:
 >
 > > Fetch `https://raw.githubusercontent.com/nimbalyst/skills/main/skills/getting-started/tutorial.md`, save it as `tutorial.md` at the root of this workspace, then run it as the Nimbalyst tutorial. Follow it exactly, wait for me at every exercise.
 
@@ -291,7 +308,7 @@ One sentence of teaching: `CLAUDE.md` is persistent project memory; every future
 
 - Pre-flight: under 1 minute
 - Orientation (two modes): about 1 minute
-- PM: P1 ~3, P2 ~3, P3 ~4, wrap ~2 (about 13, ~14 with orientation)
+- PM: P1 ~3, P2 ~3, P3 ~5, wrap ~2 (about 13, ~14 with orientation)
 - Dev: D1 ~3, D2 ~3, D3 ~4, wrap ~2 (about 13, ~14 with orientation)
 
 Take the user through every exercise. Do not skip or shortcut an exercise to save time; if a generation risks running long, tighten the ask itself instead.
@@ -316,8 +333,8 @@ Take the user through every exercise. Do not skip or shortcut an exercise to sav
 ## Surfaces touched (for maintainers)
 
 - Shared orientation: Files Mode and Agent Mode via the top-left mode switcher; the sessions list (left) and edited-files list (right)
-- PM: file writes, edited-files list, diff bar (Keep All / per-chunk), hand editing, `@file` grounding, mockup editor with annotations.
-- Dev: README/manifest grounding, hand editing, the Excalidraw diagram editor, parallel agent sessions, and an isolated worktree
+- PM: file writes, edited-files list, diff bar (Keep All / per-chunk), hand editing, verified session-title lookup, `@file` grounding, mockup editor with annotations, and embedding the mockup in markdown.
+- Dev: README/manifest grounding, hand editing, the Excalidraw diagram editor, embedding the diagram in markdown, verified session-title lookup, parallel agent sessions, and an isolated worktree
 - Deliberately excluded (full tutorial covers them): parallel sub-agents, Plan Mode, reviewing a real code diff, tracker, charts, terminal, commit widget, PR flow, custom slash commands
 
 ---
