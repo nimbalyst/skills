@@ -897,7 +897,7 @@ function cardSvg(id, C, hero, orderedExtras, arche, roast, isSquare) {
     orderedExtras.slice(0, 3).forEach((c, i) => { g += svgExtra(c, pad + i * (bw + 12), ny, bw, 98, C); });
   }
   g += `<line x1="${pad}" y1="${H - pad - 34}" x2="${W - pad}" y2="${H - pad - 34}" stroke="rgba(255,255,255,0.08)"/>`;
-  g += `<circle cx="${pad + 3}" cy="${H - pad - 12}" r="3.5" fill="#d97757"/><circle cx="${pad + 15}" cy="${H - pad - 12}" r="3.5" fill="#10a37f"/>` + TT(pad + 28, H - pad - 8, 'Built on Claude Code and Codex', { size: 14, fill: '#a6adc8' });
+  g += `<circle cx="${pad + 3}" cy="${H - pad - 12}" r="3.5" fill="#d97757"/><circle cx="${pad + 15}" cy="${H - pad - 12}" r="3.5" fill="#10a37f"/>` + TT(pad + 28, H - pad - 8, 'Analyzed from your Claude Code and Codex logs', { size: 14, fill: '#a6adc8' });
   g += TT(W - pad, H - pad - 8, 'nimbalyst.com/wrapped', { size: 14, fill: '#9fb7ff', weight: 600, anchor: 'end' });
   g += `</svg>`;
   return g;
