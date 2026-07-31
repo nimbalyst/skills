@@ -30,6 +30,26 @@ const CLAUDE_DIR = path.join(HOME, '.claude', 'projects');
 const CODEX_DIR = path.join(HOME, '.codex', 'sessions');
 const OUTPUT = path.join(process.cwd(), 'agent-wrapped.html');
 
+// ---- Target month --------------------------------------------------------
+// The Wrapped is for one "true month" (e.g. July 2026). Near a month boundary
+// (the last days of a month, or the first WRAP_GRACE_DAYS of the next one) we
+// wrap the month that just finished, so a late-July or early-August run both
+// produce a "July 2026" Wrapped. Headline, maker mix, shipped, archetype, and
+// grade are scoped to this month; the trend visuals (heatmap, sparklines) still
+// look back across all previous months. Month keys are UTC to match the log
+// dates. TARGET_MONTH may be reassigned in main() if the picked month is empty.
+const WRAP_GRACE_DAYS = 5;
+function pickTargetMonth(now) {
+  let y = now.getUTCFullYear(), m = now.getUTCMonth(); // 0-indexed
+  if (now.getUTCDate() <= WRAP_GRACE_DAYS) { m -= 1; if (m < 0) { m = 11; y -= 1; } }
+  return `${y}-${String(m + 1).padStart(2, '0')}`;
+}
+let TARGET_MONTH = pickTargetMonth(new Date());
+function monthLabel(key) { const [y, m] = key.split('-').map(Number); return new Date(Date.UTC(y, m - 1, 1)).toLocaleString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' }); }
+function monthShort(key) { const [y, m] = key.split('-').map(Number); return new Date(Date.UTC(y, m - 1, 1)).toLocaleString('en-US', { month: 'long', timeZone: 'UTC' }); }
+function prevMonthKey(key) { let [y, m] = key.split('-').map(Number); m -= 1; if (m < 1) { m = 12; y -= 1; } return `${y}-${String(m).padStart(2, '0')}`; }
+const monthOf = (ts) => (ts == null || Number.isNaN(ts)) ? null : new Date(ts).toISOString().slice(0, 7);
+
 // ===========================================================================
 // Shared primitives
 // ===========================================================================
@@ -230,7 +250,8 @@ async function analyzeClaude() {
     await eachLine(file, (rec) => {
       const sid = rec.sessionId ?? rec.session_id ?? null;
       const ts = rec.timestamp ? Date.parse(rec.timestamp) : NaN;
-      if (sid) { sessionIds.add(sid); if (!sessionToProject.has(sid)) sessionToProject.set(sid, projectSlug); if (typeof rec.gitBranch === 'string' && rec.gitBranch.trim() && !sessionBranch.has(sid)) sessionBranch.set(sid, rec.gitBranch.trim()); }
+      const inMonth = monthOf(ts) === TARGET_MONTH; // month-scope the headline aggregates
+      if (sid && inMonth) { sessionIds.add(sid); if (!sessionToProject.has(sid)) sessionToProject.set(sid, projectSlug); if (typeof rec.gitBranch === 'string' && rec.gitBranch.trim() && !sessionBranch.has(sid)) sessionBranch.set(sid, rec.gitBranch.trim()); }
       if (!Number.isNaN(ts)) {
         if (minTs === null || ts < minTs) minTs = ts; if (maxTs === null || ts > maxTs) maxTs = ts;
         if (sid) { const f = sessionFirstTs.get(sid); if (f === undefined || ts < f) sessionFirstTs.set(sid, ts); const l = sessionLastTs.get(sid); if (l === undefined || ts > l) sessionLastTs.set(sid, ts); }
@@ -238,19 +259,21 @@ async function analyzeClaude() {
         let db = dayBuckets.get(dateStr); if (!db) { db = { ts: [], sids: new Set(), tokens: 0 }; dayBuckets.set(dateStr, db); }
         db.ts.push(ts); if (sid) db.sids.add(sid);
       }
-      if (rec.isSidechain === true && sid) sidechainSessions.add(sid);
+      if (rec.isSidechain === true && sid && inMonth) sidechainSessions.add(sid);
       if (rec.type === 'assistant' && rec.message) {
         const msg = rec.message;
-        if (typeof msg.model === 'string') bump(modelCounts, msg.model);
+        if (inMonth && typeof msg.model === 'string') bump(modelCounts, msg.model);
         if (msg.usage) {
           const i = Number(msg.usage.input_tokens) || 0, o = Number(msg.usage.output_tokens) || 0, cr = Number(msg.usage.cache_read_input_tokens) || 0, cc = Number(msg.usage.cache_creation_input_tokens) || 0;
-          inTok += i; outTok += o; cacheRead += cr; cacheCreate += cc;
-          if (!projectTokens.has(projectSlug)) projectTokens.set(projectSlug, { input: 0, cacheRead: 0, cacheCreation: 0, records: 0 });
-          const pt = projectTokens.get(projectSlug); pt.input += i; pt.cacheRead += cr; pt.cacheCreation += cc; pt.records++;
-          if (!Number.isNaN(ts)) { const db = dayBuckets.get(new Date(ts).toISOString().slice(0, 10)); if (db) db.tokens += i + o + cr + cc; }
+          if (inMonth) {
+            inTok += i; outTok += o; cacheRead += cr; cacheCreate += cc;
+            if (!projectTokens.has(projectSlug)) projectTokens.set(projectSlug, { input: 0, cacheRead: 0, cacheCreation: 0, records: 0 });
+            const pt = projectTokens.get(projectSlug); pt.input += i; pt.cacheRead += cr; pt.cacheCreation += cc; pt.records++;
+          }
+          if (!Number.isNaN(ts)) { const db = dayBuckets.get(new Date(ts).toISOString().slice(0, 10)); if (db) db.tokens += i + o + cr + cc; } // full history for the monthly sparkline
         }
-        if (typeof rec.attributionMcpServer === 'string' && rec.attributionMcpServer.trim()) { const k = normKey(rec.attributionMcpServer); if (!mcpCounts.has(k)) mcpCounts.set(k, { display: rec.attributionMcpServer, count: 0 }); }
-        if (Array.isArray(msg.content)) {
+        if (inMonth && typeof rec.attributionMcpServer === 'string' && rec.attributionMcpServer.trim()) { const k = normKey(rec.attributionMcpServer); if (!mcpCounts.has(k)) mcpCounts.set(k, { display: rec.attributionMcpServer, count: 0 }); }
+        if (inMonth && Array.isArray(msg.content)) {
           const s = sig(sid);
           for (const item of msg.content) {
             if (!item || item.type !== 'tool_use' || typeof item.name !== 'string') continue;
@@ -323,11 +346,11 @@ async function analyzeClaude() {
   for (const [date, db] of [...dayBuckets.entries()].sort((a, b) => a[0] < b[0] ? -1 : 1)) {
     const sorted = [...db.ts].sort((a, b) => a - b); let am = 0;
     for (let i = 1; i < sorted.length; i++) { const g = sorted[i] - sorted[i - 1]; if (g > 0 && g < TEN_MIN) am += g; }
-    totalActiveMs += am;
-    daily.push({ date, sessions: db.sids.size });
+    if (date.slice(0, 7) === TARGET_MONTH) totalActiveMs += am; // headline hours = target month only
+    daily.push({ date, sessions: db.sids.size }); // full history for the heatmap
     const mk = date.slice(0, 7); if (!monthAgg.has(mk)) monthAgg.set(mk, { sessions: 0, tokens: 0 }); monthAgg.get(mk).tokens += db.tokens;
   }
-  for (const first of sessionFirstTs.values()) rhythm[new Date(first).getHours()]++;
+  for (const first of sessionFirstTs.values()) { if (monthOf(first) === TARGET_MONTH) rhythm[new Date(first).getHours()]++; } // rhythm = target month
   // monthly sessions by session start
   const monthSessions = new Map();
   for (const first of sessionFirstTs.values()) { const d = new Date(first); const mk = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`; bump(monthSessions, mk); }
@@ -409,6 +432,23 @@ async function analyzeCodex() {
     const timestamps = []; let model = null, cwd = null, startTs = null, lastUsage = null;
     const mcpCallIds = new Set(), patchEndIds = new Set();
     const s = { edits: 0, reads: 0, searches: 0, testRuns: 0, opsCmds: 0, makerCategories: new Map(), plannerMcpCalls: 0, commitVerbLabels: [], branchLabel: null };
+    // Light scan: every session feeds the full-history trends (heatmap +
+    // sparklines) and the date span, then the month gate scopes the rest.
+    let lsMeta = null, lsMin = null, lsUsage = null;
+    for (const rec of records) {
+      const rts = rec.timestamp ? Date.parse(rec.timestamp) : NaN;
+      if (!Number.isNaN(rts)) { if (minTs === null || rts < minTs) minTs = rts; if (maxTs === null || rts > maxTs) maxTs = rts; if (lsMin === null || rts < lsMin) lsMin = rts; if (rec.type === 'session_meta' && lsMeta === null) lsMeta = rts; }
+      const lp = rec.payload && typeof rec.payload === 'object' ? rec.payload : null;
+      if (rec.type === 'event_msg' && lp && lp.type === 'token_count' && lp.info && lp.info.total_token_usage) lsUsage = lp.info.total_token_usage;
+    }
+    const st0 = lsMeta ?? lsMin;
+    if (st0 !== null) {
+      const dstr = new Date(st0).toISOString().slice(0, 10);
+      bump(daily, dstr);
+      const mk = dstr.slice(0, 7); if (!monthly.has(mk)) monthly.set(mk, { sessions: 0, tokens: 0 }); monthly.get(mk).sessions++;
+      if (lsUsage) monthly.get(mk).tokens += (Number(lsUsage.input_tokens) || 0) + (Number(lsUsage.output_tokens) || 0);
+    }
+    if (monthOf(st0) !== TARGET_MONTH) continue; // scope the rest of the analysis to the target month
     // pass 1
     for (const rec of records) {
       const t = rec.type, p = rec.payload && typeof rec.payload === 'object' ? rec.payload : null;
@@ -465,7 +505,7 @@ async function analyzeCodex() {
     bump(projects, cwd || '(unknown)');
     if (lastUsage) { tokInput += Number(lastUsage.input_tokens) || 0; tokCached += Number(lastUsage.cached_input_tokens) || 0; tokOutput += Number(lastUsage.output_tokens) || 0; tokReasoning += Number(lastUsage.reasoning_output_tokens) || 0; }
     const st = startTs ?? (timestamps.length ? Math.min(...timestamps) : null);
-    if (st !== null) { rhythm[new Date(st).getHours()]++; const dateStr = new Date(st).toISOString().slice(0, 10); bump(daily, dateStr); const mk = dateStr.slice(0, 7); if (!monthly.has(mk)) monthly.set(mk, { sessions: 0, tokens: 0 }); monthly.get(mk).sessions++; if (lastUsage) monthly.get(mk).tokens += (Number(lastUsage.input_tokens) || 0) + (Number(lastUsage.output_tokens) || 0); }
+    if (st !== null) rhythm[new Date(st).getHours()]++; // rhythm = target month; daily + monthly already recorded in the light scan
     timestamps.sort((a, b) => a - b);
     for (let i = 1; i < timestamps.length; i++) { const g = timestamps[i] - timestamps[i - 1]; if (g > 0 && g < TEN_MIN) activeMs += g; }
     addTaskMix(tally, classifyTaskMix(s));
@@ -534,8 +574,8 @@ function combine(claude, codex) {
   for (const d of claude.daily) bump(dailyMap, d.date, d.sessions);
   for (const [date, n] of Object.entries(codex.daily)) bump(dailyMap, date, n);
   const daily = [...dailyMap.entries()].sort((a, b) => a[0] < b[0] ? -1 : 1).map(([date, sess]) => ({ date, sessions: sess }));
-  let biggestDay = { date: null, sessions: 0 }; for (const d of daily) if (d.sessions > biggestDay.sessions) biggestDay = d;
-  const activeDays = daily.filter((d) => d.sessions > 0).length;
+  let biggestDay = { date: null, sessions: 0 }; for (const d of daily) if (d.date.slice(0, 7) === TARGET_MONTH && d.sessions > biggestDay.sessions) biggestDay = d;
+  const activeDays = daily.filter((d) => d.date.slice(0, 7) === TARGET_MONTH && d.sessions > 0).length;
 
   // monthly series (combined) + deltas
   const claudeMonthly = new Map(claude.monthly.map((m) => [m.month, m]));
@@ -543,13 +583,12 @@ function combine(claude, codex) {
   const combinedMonth = (mk) => { const c = claudeMonthly.get(mk), x = codexMonthly.get(mk); return { sessions: (c ? c.sessions : 0) + (x ? x.sessions : 0), tokensM: (c ? c.tokensMillions : 0) + (x ? x.tokens / 1e6 : 0) }; };
   const monthKeys = [...new Set([...claudeMonthly.keys(), ...codexMonthly.keys()])].sort();
   const monthlySeries = monthKeys.map((mk) => { const m = combinedMonth(mk); return { month: mk, sessions: m.sessions, tokensM: round1(m.tokensM) }; });
-  // month-over-month: latest full month vs the prior. Prefer Codex full-history.
-  const lastTwo = monthKeys.slice(-2);
-  const cur = lastTwo[1], prev = lastTwo[0];
-  const codexCur = codexMonthly.get(cur), codexPrev = codexMonthly.get(prev);
-  const deltaSessions = monthDelta(codexCur ? codexCur.sessions : 0, codexPrev ? codexPrev.sessions : 0, 10);
-  const deltaTokens = monthDelta(codexCur ? codexCur.tokens / 1e6 : 0, codexPrev ? codexPrev.tokens / 1e6 : 0, 50);
-  const prevMonthName = prev ? new Date(prev + '-01T00:00:00Z').toLocaleDateString('en-US', { month: 'long', timeZone: 'UTC' }) : 'last month';
+  // month-over-month: the target month vs the month before it (combined).
+  const cur = TARGET_MONTH, prev = prevMonthKey(TARGET_MONTH);
+  const curM = combinedMonth(cur), prevM = combinedMonth(prev);
+  const deltaSessions = monthDelta(curM.sessions, prevM.sessions, 10);
+  const deltaTokens = monthDelta(curM.tokensM, prevM.tokensM, 50);
+  const prevMonthName = monthShort(prev);
   const cardPills = [
     { label: `sessions vs ${prevMonthName}`, delta: deltaSessions },
     { label: `tokens vs ${prevMonthName}`, delta: deltaTokens },
@@ -832,7 +871,7 @@ function cardSvg(id, C, hero, orderedExtras, arche, roast, isSquare) {
   const pad = isSquare ? 60 : 46;
   const heroSize = isSquare ? 130 : 116, archSize = isSquare ? 30 : 26, roastSize = isSquare ? 22 : 19;
   // header
-  g += `<circle cx="${pad + 4}" cy="${pad + 5}" r="4" fill="#6395ff"/>` + TT(pad + 16, pad + 10, 'YOUR AGENTS, WRAPPED · JULY 2026', { size: 15, fill: '#b9c3d8', weight: 700, ls: 2 });
+  g += `<circle cx="${pad + 4}" cy="${pad + 5}" r="4" fill="#6395ff"/>` + TT(pad + 16, pad + 10, `YOUR AGENTS, WRAPPED · ${monthLabel(TARGET_MONTH).toUpperCase()}`, { size: 15, fill: '#b9c3d8', weight: 700, ls: 2 });
   g += `<g transform="translate(${W - pad - 150},${pad - 14})"><g transform="scale(0.26)">${NB_MARK.replace('<svg class="nb-mark" viewBox="0 0 100 100" aria-hidden="true">', '<g>').replace('</svg>', '</g>')}</g>` + TT(34, 19, 'nimbalyst', { size: 20, fill: '#eef1fb', weight: 650 }) + `</g>`;
 
   if (isSquare) {
@@ -913,10 +952,10 @@ function renderHtml(C, G) {
   const startDay = C.headline.dateSpan.start ? C.headline.dateSpan.start.slice(0, 10) : '';
 
   const P = [];
-  P.push(`<section class="panel cover"><div class="eyebrow">Your Agents, Wrapped</div><div class="year">2026</div><div class="range">Claude Code and Codex &middot; ${startDay} to ${C.headline.dateSpan.end ? C.headline.dateSpan.end.slice(0, 10) : ''}</div><div class="scrollcue">scroll</div><div class="wm">nimbalyst</div></section>`);
-  P.push(`<section class="panel center"><div class="kicker">Together this year</div><div class="hero">${C.headline.sessions.toLocaleString()}</div><div class="herosub">sessions across both agents, since ${startDay ? fmtDayLabel(startDay) : ''}</div><div class="pills">${pillHtml(C.deltas.cardPills[0], sessionsSpark)}${pillHtml(C.deltas.cardPills[1], tokensSpark)}</div><div class="cap">Sparklines trace session and token volume by month.</div></section>`);
+  P.push(`<section class="panel cover"><div class="eyebrow">Your Agents, Wrapped</div><div class="year">${monthShort(TARGET_MONTH)}</div><div class="range">${TARGET_MONTH.slice(0, 4)} &middot; Claude Code and Codex</div><div class="scrollcue">scroll</div><div class="wm">nimbalyst</div></section>`);
+  P.push(`<section class="panel center"><div class="kicker">In ${monthLabel(TARGET_MONTH)}</div><div class="hero">${C.headline.sessions.toLocaleString()}</div><div class="herosub">sessions across both agents in ${monthShort(TARGET_MONTH)}</div><div class="pills">${pillHtml(C.deltas.cardPills[0], sessionsSpark)}${pillHtml(C.deltas.cardPills[1], tokensSpark)}</div><div class="cap">Sparklines trace session and token volume by month, looking back across your whole run.</div></section>`);
   P.push(`<section class="panel"><h2>Two agents, one workflow</h2><p class="lead">Codex is your volume workhorse, Claude Code your heavy-context tool. Their share of ${C.headline.toolCalls.toLocaleString()} tool calls and the other comparable dimensions:</p>${gbars(C.split)}<div class="keyrow"><span class="k1">Claude Code</span><span class="k2">Codex</span></div></section>`);
-  if (C.daily.length) P.push(`<section class="panel"><h2>Every active day</h2><div class="hero sm">${C.activeDays}</div><div class="herosub">active days across both agents, ${C.headline.hours}h estimated. One square per day.</div>${heatmap(C.daily)}<div class="heatkey"><span>less</span><i style="background:rgba(177,202,255,0.12)"></i><i style="background:#26507e"></i><i style="background:#3a7fb5"></i><i style="background:#4aa8c8"></i><i style="background:#57d4cb"></i><span>more</span></div></section>`);
+  if (C.daily.length) P.push(`<section class="panel"><h2>Every active day</h2><div class="hero sm">${C.activeDays}</div><div class="herosub">active days in ${monthShort(TARGET_MONTH)}, ${C.headline.hours}h estimated. Each square is a day; the grid looks back across your whole run.</div>${heatmap(C.daily)}<div class="heatkey"><span>less</span><i style="background:rgba(177,202,255,0.12)"></i><i style="background:#26507e"></i><i style="background:#3a7fb5"></i><i style="background:#4aa8c8"></i><i style="background:#57d4cb"></i><span>more</span></div></section>`);
   P.push(`<section class="panel"><h2>When you run them</h2><div class="hero sm">${fmtHour(peakHour)}</div><div class="herosub">your busiest hour. You are ${rhythmDescriptor}: ${pctInt(rhythm.nightShare)} of sessions start after 10pm.</div>${hourBars(rhythm.byHourLocal)}<div class="cap">Session starts by hour, local time. Purple bars are overnight.</div></section>`);
   P.push(`<section class="panel center"><div class="kicker">Your biggest day</div><div class="hero">${C.biggestDay.sessions}</div><div class="herosub">sessions in a single day${C.biggestDay.date ? `, on ${fmtDayLabel(C.biggestDay.date)}` : ''}</div><div class="cap">The one day both agents ran hottest.</div></section>`);
   P.push(`<section class="panel"><h2>Tokens moved</h2><div class="split2"><div class="notecol"><div class="hero sm">${C.headline.combinedTokensDisplay}</div><div class="herosub">tokens across both agents. Claude ${round1(cl.tokens.total / 1e9)}B, Codex ${round1(C._codex.tokens.total / 1e9)}B.</div><div class="equiv">${C.headline.tokenEquivalence}</div></div><div class="donutwrap">${donut(C.tokenSplit, `${C.tokenSplit[0].value}%`, 'cache read')}${legend(C.tokenSplit)}</div></div></section>`);
@@ -935,8 +974,8 @@ function dlCard(id,w,h,fn){var s=document.getElementById(id);var xml=new XMLSeri
 function toggleSq(){var s=document.getElementById('cw-sq'),l=document.getElementById('cw-land');if(s.style.display==='none'){s.style.display='';l.style.display='none';}else{s.style.display='none';l.style.display='';}}
 </script>`;
 
-  const ad = `<section class="panel adcard"><div class="ad-inner"><h2 class="ad-title">See all of this in one workspace</h2><p class="ad-body">Nimbalyst is the open-source visual workspace for building with Codex, Claude Code, and more. Run your agents in parallel and watch every session on one board. Edit what they write as markdown, mockups, and diagrams, and keep your tasks, trackers, and docs in the same place.</p><p class="ad-tie">You ran ${C.headline.sessions.toLocaleString()} sessions across two agents this period. Nimbalyst is where you run the next set without losing the thread, and where a team shares the docs, trackers, and boards.</p><a class="ad-btn" href="https://nimbalyst.com">Get Nimbalyst, open source and free for individuals &#8594; nimbalyst.com</a></div></section>`;
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Your Agents, Wrapped 2026</title><style>${CSS}</style></head><body>${finale}${P.join('')}${graderHtml}${ad}${script}</body></html>`;
+  const ad = `<section class="panel adcard"><div class="ad-inner"><h2 class="ad-title">See all of this in one workspace</h2><p class="ad-body">Nimbalyst is the open-source visual workspace for building with Codex, Claude Code, and more. Run your agents in parallel and watch every session on one board. Edit what they write as markdown, mockups, and diagrams, and keep your tasks, trackers, and docs in the same place.</p><p class="ad-tie">You ran ${C.headline.sessions.toLocaleString()} sessions across two agents in ${monthLabel(TARGET_MONTH)}. Nimbalyst is where you run the next set without losing the thread, and where a team shares the docs, trackers, and boards.</p><a class="ad-btn" href="https://nimbalyst.com">Get Nimbalyst, open source and free for individuals &#8594; nimbalyst.com</a></div></section>`;
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Your Agents, Wrapped &middot; ${monthLabel(TARGET_MONTH)}</title><style>${CSS}</style></head><body>${finale}${P.join('')}${graderHtml}${ad}${script}</body></html>`;
 }
 
 const CSS = `
@@ -1044,14 +1083,19 @@ can read this whole script first; it is one file.`);
 async function main() {
   const args = process.argv.slice(2);
   if (args.includes('--what-do-i-read') || args.includes('--what-do-i-read=true')) { printWhatDoIRead(); return; }
-  console.error('Reading Claude Code + Codex session logs (read-only)...');
-  const claude = await analyzeClaude();
-  const codex = await analyzeCodex();
-  const C = combine(claude, codex);
+  console.error(`Reading Claude Code + Codex session logs (read-only)... wrapping ${monthLabel(TARGET_MONTH)}`);
+  let claude = await analyzeClaude();
+  let codex = await analyzeCodex();
+  let C = combine(claude, codex);
+  // Fallback: if the picked month has no activity but earlier months do, wrap the most recent month that has data.
+  if (C.headline.sessions === 0) {
+    const withData = C.monthlySeries.filter((m) => m.sessions > 0);
+    if (withData.length) { TARGET_MONTH = withData[withData.length - 1].month; console.error(`  No activity this month; wrapping ${monthLabel(TARGET_MONTH)} instead.`); claude = await analyzeClaude(); codex = await analyzeCodex(); C = combine(claude, codex); }
+  }
   const G = computeGrade(C);
   const html = renderHtml(C, G);
   await writeFile(OUTPUT, html, 'utf8');
-  console.error(`\nWrote ${OUTPUT}`);
+  console.error(`\nWrote ${OUTPUT}  (${monthLabel(TARGET_MONTH)} Wrapped)`);
   console.error(`  ${C.headline.sessions.toLocaleString()} sessions · ${C.headline.hours}h · ${C.headline.combinedTokensDisplay} tokens`);
   console.error(`  grade ${G.grade}/100 (${G.letter}), level ${G.level} · archetype ${arche_(C)}`);
   console.error(`  Open ${path.basename(OUTPUT)} in a browser; use the in-page button to download the share card PNG.`);
