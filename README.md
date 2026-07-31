@@ -61,6 +61,7 @@ Skills are reusable prompt packages that give Claude specialized knowledge and w
 | Skill | Description |
 | --- | --- |
 | `one-step-better-at-cc` | Personalized, evidence-based recommendations for improving your Claude Code/Nimbalyst workflow |
+| `wrapped` | Your Agents, Wrapped plus a Grader report from your own Claude Code and Codex logs, as one local HTML |
 
 ## Installation
 
